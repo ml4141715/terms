@@ -204,7 +204,7 @@
                 //return ;  // 0 to Number -1
             }
             function getColor( ) {
-                let number = getRandom(bootstrapColor.length );
+                let number = 7 ; //getRandom(bootstrapColor.length );
                 return stringFormat('card {0} {1}', bootstrapColor[number].background,  bootstrapColor[number].text);
             }
             document.getElementById("cards").innerHTML = cardContent +  document.getElementById("cards").innerHTML;
