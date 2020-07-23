@@ -1,0 +1,268 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TermReview</title>
+    <link rel="icon" href="https://ml4141715.github.io/water/cdn/image/leaf.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+</head>
+
+<body >
+
+
+
+
+<!--    <div class="vh-100 vw-100 overflow-auto" >-->
+
+
+        <nav class="navbar navbar-expand-md bg-primary navbar-dark sticky-top">
+
+            <div class="container">
+                <a class="navbar-brand" href="#">Terms</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse " id="collapsibleNavbar">
+                    <ul class="navbar-nav ml-auto">
+<!--                        <li class="nav-item" >-->
+<!--                            <a class="nav-link" onclick="pushToCrads( 'inserId' , 'insertName'  );" href="#">Info</a>-->
+<!--                        </li>-->
+<!--                        <li class="nav-item">-->
+<!--                            <a class="nav-link" href="#">Help</a>-->
+<!--                        </li>-->
+                        <li class="nav-item">
+                            <a class="nav-link" href="#"  data-toggle="modal" data-target="#loginModal">Login</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container" >
+
+            <div class="my-3">
+                <div class="card">
+                    <div class="card-header">
+                       Insert Term
+                    </div>
+                    <div class="card-body">
+                        <input type="text" class="form-control mb-3" id="insetValue" placeholder="Please Type the TermName">
+                        <a class="btn btn-danger" href="#" onclick="insertOnclick()" >Insert</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cards">
+
+
+
+            </div>
+
+        </div>
+
+
+         <!-- LOGIN MODAL -->
+        <div class="modal" id="loginModal" >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Login</h5>
+                <button class="close" data-dismiss="modal">&times;</button>
+              </div>
+              <div class="modal-body">
+                <form id="userLogin" >
+                  <div class="form-group">
+                    <label for="username" >Username</label>
+                    <input type="text" id="username" placeholder="Username" class="form-control">
+                  </div>
+                  <div class="form-group">
+                    <label for="password" >Password</label>
+                    <input type="password" id="password" placeholder="Password" class="form-control">
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                        <!-- data-dismiss="modal"  -->
+                <button class="btn btn-primary" data-dismiss="modal" onclick="requestLogin()">Login</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+<!--    </div>-->
+     <script >
+         
+         let websocket = null;
+         onWebsocketClose(0);
+
+         function onWebsocketOpen() {
+             let value = localStorage.getItem("cookie");
+             //console.log( value );
+             if ( value != null ){
+                 let sendData = {};
+                 sendData["type"] = "loginCookie";
+                 sendData["data"] = {};
+                 let data = sendData["data"];
+                 data["cookie"] = value;  //c7c67f66fdf7f62f
+                 websocket.send( JSON.stringify( sendData ) );
+             }
+         }
+
+         function onWebsocketMessage( receiveData  ) {
+
+            //  receiveData = JSON.parse( event.data );
+            if( receiveData["type"] == "loginUser" ){
+                if( receiveData["result"] == "success" ){
+                    //$.cookie('cookie',  receiveData["cookie"] );
+                    localStorage.setItem( "cookie" , receiveData["cookie"] );
+                }
+            }
+
+            else if( receiveData["type"] == "load" ){
+                if( receiveData["result"] == "success" ){
+                    document.getElementById( "cards" ).innerHTML = '';
+                    terms = receiveData["terms"];
+                    for ( let i = 0 ; i < terms.length ; i++ ){
+                        term = terms[ i ];
+                        termId = term[ 0 ];
+                        termName = term[ 1 ];
+                        pushToCrads( termId , termName  )
+                    }
+                }
+            }
+
+         }
+
+         function onWebsocketClose( number ) {
+             sleep(number);
+             websocket = new WebSocket("wss://websocket.stonybrook.club:5443/bilibili");
+             websocket.onopen = function ( event ) {
+                 onWebsocketOpen();
+             };
+             websocket.onmessage = function (event) {
+                 //console.log( event.data );
+                 receiveData = JSON.parse( event.data );
+                 onWebsocketMessage( receiveData  )
+             };
+
+             websocket.onclose = function (event) {
+                 onWebsocketClose( 2 );
+             };
+         }
+
+         async function sleep(interval) {
+            return new Promise(resolve => {
+                setTimeout(resolve, interval);
+            })
+         }
+
+
+         function pushToCrads( insertId , insertName  ) {
+            const bootstrapColor =
+                [{"background":"bg-primary", "text":"text-white"},
+                {"background":"bg-success", "text":"text-white"},
+                {"background":"bg-info", "text":"text-white"},
+                {"background":"bg-warning", "text":"text-white"},
+                {"background":"bg-danger", "text":"text-white"},
+                {"background":"bg-secondary", "text":"text-white"},
+                {"background":"bg-dark", "text":"text-white"},
+                {"background":"bg-light", "text":"text-dark"},];
+            let cardStr = "<div class='card' id='{0}' ><div  class='{1}' ><div class='card-body'><div class='row'><div class='col-10'>{2}</div><div class='col-2' onclick='removeOnclick(id)' id='{3}'><i class='fa fa-minus' aria-hidden='true'></i></div></div></div></div></div><br>";
+            function stringFormat() {
+                var s = arguments[0];
+                for (var i = 0; i < arguments.length - 1; i++) {
+                    var reg = new RegExp("\\{" + i + "\\}", "gm");
+                    s = s.replace(reg, arguments[i + 1]);
+                }
+                return s;
+            }
+            let color = getColor( );
+            let cardContent =  stringFormat( cardStr, insertId +"_" , color  , insertName , insertId   );
+            function getRandom( Number ){
+                while ( true ){
+                    let randomNum = Math.floor((Math.random()*Number));
+                    if( avoidRepeatNum != randomNum ){
+                        avoidRepeatNum = randomNum;
+                        return randomNum;
+                    }
+                }
+                //return ;  // 0 to Number -1
+            }
+            function getColor( ) {
+                let number = getRandom(bootstrapColor.length );
+                return stringFormat('card {0} {1}', bootstrapColor[number].background,  bootstrapColor[number].text);
+            }
+            document.getElementById("cards").innerHTML = cardContent +  document.getElementById("cards").innerHTML;
+         }
+
+         let avoidRepeatNum = null;
+
+         function insertOnclick() {
+             insertValue =  document.getElementById("insetValue").value ;
+             let sendData = {};
+             sendData["type"] = "add";
+             sendData["data"] = {};
+             let data = sendData["data"];
+             data["name"] = insertValue   ;
+             websocket.send( JSON.stringify( sendData ) );
+         }
+
+         function removeOnclick(id) {
+             //$( "#"+id+"_" ).remove();
+             let sendData = {};
+             sendData["type"] = "delete";
+             sendData["data"] = {};
+             let data = sendData["data"];
+             data["id"] = id;
+             websocket.send( JSON.stringify( sendData ) );
+         }
+
+
+         function getUserCookie(){
+             return   $.cookie('userId');
+         }
+
+         function setUserCookie( userId ) {
+             if( userId == null ){
+                 $.removeCookie('userId');
+             }else{
+                 $.cookie('userId', userId );
+             }
+         }
+
+
+         function requestLogin() {
+                let username =  document.getElementById("username").value ;
+                let password = document.getElementById("password").value ;
+                let sendData = {};
+                sendData["type"] = "loginUser";
+                sendData["data"] = {};
+                let data = sendData["data"];
+                data["username"] = username;
+                data["password"] = password;
+                websocket.send(  JSON.stringify( sendData )  );
+         }
+
+    </script>
+</body>
+</html>
+
+
+
+
+
